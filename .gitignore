@@ -1,0 +1,15 @@
+__pycache__
+build
+dist
+logs
+runtime
+tmp
+models
+.idea
+*.bat
+*.7z
+*.bak
+*.spec
+*.exe
+*.tmp
+*.wav

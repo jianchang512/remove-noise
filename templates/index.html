@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>音频降噪</title>
+<link rel="stylesheet" href="/static/bootstrap.min.css">
+
+<style>
+
+.container {
+  max-width: 1400px;
+  min-width: 375px;
+  margin: 20px auto;
+  padding: 20px;
+}
+
+h1 {
+  color: #343a40; /* Dark gray title */
+}
+
+.dropzone {
+  width: 70%;
+  margin:auto;
+  height: 200px;
+  border-radius: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction:column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease; /* Smooth transition for border color */
+}
+
+.dropzone.dragover {
+  border-color: #007bff; /* Blue border on drag over */
+  background-color: #e9ecef; /* Light gray background on drag over */
+}
+
+.dropzone p {
+  font-size: 1.2rem;
+}
+
+#file-name {
+  font-style: italic;
+  color: #6c757d;
+}
+
+.btn-lg {
+  padding: 15px 30px; /* Increased button padding */
+}
+
+#audio-player-container {
+  margin-top: 20px;
+}
+
+#audio-player {
+  width: 100%;
+  max-width: 600px; /* Limit audio player width */
+  margin: 0 auto;
+}
+#fileInput{
+ cursor:pointer
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  .btn-lg {
+    padding: 10px 20px;
+  }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="text-center text-primary">音频降噪</h1>
+
+  <div id="upload-area" class="mt-4 border alert alert-secondary dropzone position-relative">
+    <input type="file" accept="video/*,audio/*" id="fileInput" class="opacity-0 position-absolute start-0 end-0 top-0 bottom-0">
+    <p class="text-center h4">拖拽或点击上传音频或视频</p>
+    <p id="file-name" class="text-center mt-2"></p> 
+</div>	
+
+  <div class="mt-4 text-center">
+    <button id="start-button" class="btn btn-lg btn-danger" disabled>点击开始降噪</button>
+  </div>
+
+  <div id="audio-player-container" class="mt-4 text-center" style="display:none;">
+    <audio id="audio-player" controls></audio>
+    <a id="download-link" class="btn btn-sm btn-secondary ml-2" href="#" download="processed_audio.wav">下载</a>
+  </div>
+	
+  <div class="my-3 text-center">
+	<a class="text-muted" target="_blank" href="https://github.com/jianchang512/remove-noise">Github</a>
+  </div>	
+	
+</div>
+
+<script src="/static/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  let uploadArea = $('#upload-area');
+  let fileInput = $('#fileInput');
+  let fileName = $('#file-name');
+  let startButton = $('#start-button');
+  let audioPlayerContainer = $('#audio-player-container');
+  let audioPlayer = $('#audio-player');
+  let downloadLink = $('#download-link');
+
+//  uploadArea.on('click', function(event) {
+ //   event.stopPropagation();
+ //   fileInput.click();
+ // });
+
+  uploadArea.on('dragover', function(e) {
+    e.preventDefault();
+    $(this).addClass('dragover');
+  });
+
+  uploadArea.on('dragleave', function() {
+    $(this).removeClass('dragover');
+  });
+
+  uploadArea.on('drop', function(e) {
+    e.preventDefault();
+    $(this).removeClass('dragover');
+    let file = e.originalEvent.dataTransfer.files[0];
+    uploadFile(file);
+  });
+
+  fileInput.on('change', function() {
+    uploadFile(this.files[0]);
+  });
+
+  function uploadFile(file) {
+    fileName.text('正在上传并处理: ' + file.name);
+    startButton.text('正在上传...');
+    startButton.prop('disabled', true);
+
+    let formData = new FormData();
+    formData.append('audio', file);
+
+    $.ajax({
+      url: '/upload',
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: function(response) {
+        if (response.code === 0) {
+          window.audio_url = response.data.url;
+          fileName.text('已上传: ' + file.name);
+          startButton.text('点击开始降噪');
+          startButton.prop('disabled', false);
+        } else {
+          alert('上传失败: ' + response.msg);
+        }
+      },
+      error: function(xhr, status, error) {
+        alert('上传失败: ' + error);
+      }
+    });
+  }
+
+
+  startButton.on('click', function() {
+    if (window.audio_url) {
+      $(this).text('正在降噪处理,请耐心等待...');
+      $(this).prop('disabled', true);
+      $.ajax({
+        url: '/api',
+        type: 'POST',
+        data: { url: window.audio_url },
+        timeout: 7200000, // 7200 seconds
+        success: function(response) {
+          if (response.code === 0) {
+            audioPlayer.attr('src', response.data.url);
+            downloadLink.attr('href', response.data.url);
+            audioPlayerContainer.show();
+            $(this).text('降噪完成');
+          } else {
+            alert('降噪失败');
+          }
+        },
+        error: function(xhr, status, error) {
+          alert('降噪失败:' + error);
+        },
+        complete: function() {
+          startButton.prop('disabled', false);
+          startButton.text('点击开始降噪');
+        }
+      });
+    }
+  });
+});
+</script> 
+
+</body>
+</html>
