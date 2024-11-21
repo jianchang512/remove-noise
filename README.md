@@ -19,7 +19,7 @@
 
 **预打包版本:**
 
-1. 下载Win预打包版本并解压。
+1. 下载Win预打包版本并解压 (https://github.com/jianchang512/remove-noise/releases/download/v0.1/win-remove-noise-0.1.7z) 。
 2. 双击`runapi.bat`文件，系统将自动打开浏览器，访问地址为`http://127.0.0.1:5080`。
 3. 选择需要处理的音频或视频文件即可开始降噪。
 
